@@ -17,13 +17,12 @@ import argparse
 import ntpath
 import pandas as pd
 import numpy as np
-import nltk
 from nltk.tokenize import sent_tokenize
 from nltk.corpus import stopwords
 from sklearn.metrics.pairwise import cosine_similarity
 import networkx as nx
 import time
-
+import nltk
 nltk.download('stopwords')
 nltk.download('punkt')
 
@@ -88,14 +87,18 @@ def remove_stopwords(sentence):
     return sen_new
 
 
-def text_preprocessing(text):
+def text_preprocessing(text, length):
     """
     Text preprocessing function
+    :param length: length of the summary
     :param text: text to be pre-processed
     :return: list with original sentences & list with processed sentences
     """
     # separate out sentences
     sentences = sent_tokenize(text)
+    # check if the text has at least 5 elements
+    if len(sentences) < length:
+        return False, False
     # remove every character except alphabets
     clean_sentences = pd.Series(sentences).str.replace("[^a-zA-Z]", " ")
     # turn all characters lowercase
@@ -174,7 +177,14 @@ def main(text_path, embedding_path, sum_length, show):
 
     print('[INFO] Ingesting Text...')
     text = ingest_data(text_path)
-    orig_sentences, sentences = text_preprocessing(text)
+    orig_sentences, sentences = text_preprocessing(text, sum_length)
+
+    # handle summary length mismatches
+    if not orig_sentences:
+        print('[ERROR] Text is shorter than summary length. Writing entire text file.')
+        write_summary(text, title=path_leaf(text_path))
+        return text
+
     print('[INFO] Loading Embeddings...')
     start = time.time()
     embeddings = get_embeddings(embedding_path)
@@ -207,6 +217,8 @@ if __name__ == '__main__':
     args = get_arguments()
 
     summary_length = args['length']
+
+    # minimum summary length requirement
     if args['length'] < 5:
         print(f'[WARNING] Summary length less than 5. Setting length to 5')
         summary_length = 5
