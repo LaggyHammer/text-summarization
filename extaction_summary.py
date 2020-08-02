@@ -1,3 +1,18 @@
+# coding: utf-8
+# =====================================================================
+#  Filename:    extraction_summary.py
+#
+#  py Ver:      python 3.6 or later
+#
+#  Description: Performs extractive Summarization on a given text file
+#
+#  Usage: python extraction_summary.py --file sample_text.py --embeddings glove.6B.100d.txt --length 5
+#
+#  Note: Requires sklearn and nltk
+#
+#  Author: Ankit Saxena (ankch24@gmail.com)
+# =====================================================================
+
 import argparse
 import ntpath
 import pandas as pd
