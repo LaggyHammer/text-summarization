@@ -173,6 +173,14 @@ def summarize(sentences, scores, length):
     return summary
 
 
+def write_summary(text, title):
+    """
+    Writes the summary to a text file
+    """
+    with open('summary_' + title, 'w') as f:
+        f.write(text)
+
+
 def main(text_path, embedding_path, sum_length, show):
 
     print('[INFO] Ingesting Text...')
@@ -202,14 +210,6 @@ def main(text_path, embedding_path, sum_length, show):
         print(summary)
 
     return summary
-
-
-def write_summary(text, title):
-    """
-    Writes the summary to a text file
-    """
-    with open('summary_' + title, 'w') as f:
-        f.write(text)
 
 
 if __name__ == '__main__':
