@@ -27,11 +27,19 @@ def get_arguments():
 
 
 def path_leaf(path):
+    """
+    Gets file name from a given path
+    """
     head, tail = ntpath.split(path)
     return tail or ntpath.basename(head)
 
 
 def ingest_data(path):
+    """
+    Reads data from a given path
+    :param path: path to file containing text to be summarized
+    :return: text to be summarized
+    """
     f = open(path, 'r', encoding='utf8')
     text = f.read()
     f.close()
@@ -40,6 +48,11 @@ def ingest_data(path):
 
 
 def get_embeddings(embedding_path):
+    """
+    Reads GloVe embeddings from a text file
+    :param embedding_path: path to the word embeddings
+    :return: dictionary containing words and their respective embeddings
+    """
     word_embeddings = {}
     f = open(embedding_path, encoding='utf-8')
     for line in f:
@@ -53,23 +66,42 @@ def get_embeddings(embedding_path):
 
 
 def remove_stopwords(sentence):
+    """
+    Removes stopwords from a given sentence
+    """
     sen_new = " ".join([i for i in sentence if i not in stopwords.words('english')])
     return sen_new
 
 
 def text_preprocessing(text):
+    """
+    Text preprocessing function
+    :param text: text to be pre-processed
+    :return: list with original sentences & list with processed sentences
+    """
+    # separate out sentences
     sentences = sent_tokenize(text)
+    # remove every character except alphabets
     clean_sentences = pd.Series(sentences).str.replace("[^a-zA-Z]", " ")
+    # turn all characters lowercase
     clean_sentences = [s.lower() for s in clean_sentences]
+    # remove stopwords from sentences
     clean_sentences = [remove_stopwords(r.split()) for r in clean_sentences]
 
     return sentences, clean_sentences
 
 
 def text_vectorization(sentences, embeddings):
+    """
+    Calculates vectors for a given list of sentences
+    :param sentences: sentences to create the vectors for
+    :param embeddings: embeddings to create the vectors with
+    :return: list of sentence vectors
+    """
     sentence_vectors = []
     for i in sentences:
-
+        # get embeddings for each word in a sentence & sum them up
+        # divide the sum with the length of the sentence
         if len(i) != 0:
             vector = sum([embeddings.get(w, np.zeros((100,))) for w in i.split()]) / (len(i.split()) + 0.001)
         else:
@@ -80,23 +112,42 @@ def text_vectorization(sentences, embeddings):
 
 
 def rank_text(vectors):
+    """
+    Rank the sentence vectors based on their similarity
+    :param vectors: list of vectors to be ranked
+    :return: dictionary containing the scores for each vector
+    """
+    # initialize similarity matrix
     similarity_matrix = np.zeros([len(vectors), len(vectors)])
+    # fill the similarity matrix with cosine similarity scores
     for i in range(len(vectors)):
         for j in range(len(vectors)):
             if i != j:
                 similarity_matrix[i][j] = cosine_similarity(vectors[i].reshape(1, 100),
                                                             vectors[j].reshape(1, 100))[0, 0]
 
+    # create a network graph from the matrix
     nx_graph = nx.from_numpy_array(similarity_matrix)
+    # use the pagerank algorithm to get scores for each sentence
     scores = nx.pagerank(nx_graph)
 
     return scores
 
 
 def summarize(sentences, scores, length):
+    """
+    Summarizes the text by extracting the top ranked sentences
+    :param sentences: list of sentences to summarize
+    :param scores: scores for each sentence
+    :param length: number of sentences in the summary
+    :return: summarized text
+    """
+    # order sentence indices according to their rank
     ordered_indices = [index[0] for index in sorted(scores.items(), key=lambda x: x[1], reverse=True)]
+    # extract the top sentences
     top_indices = sorted(ordered_indices)[:length]
 
+    # append to summary
     summary = ""
     for index in top_indices:
         summary = summary + sentences[index] + " "
@@ -129,11 +180,15 @@ def main(text_path, embedding_path, sum_length, show):
 
 
 def write_summary(text, title):
+    """
+    Writes the summary to a text file
+    """
     with open('summary_' + title, 'w') as f:
         f.write(text)
 
 
 if __name__ == '__main__':
+
     args = get_arguments()
 
     main(text_path=args['file'], embedding_path=args['embeddings'], sum_length=args['length'], show=True)
