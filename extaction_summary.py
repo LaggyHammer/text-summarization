@@ -206,4 +206,9 @@ if __name__ == '__main__':
 
     args = get_arguments()
 
-    main(text_path=args['file'], embedding_path=args['embeddings'], sum_length=args['length'], show=True)
+    summary_length = args['length']
+    if args['length'] < 5:
+        print(f'[WARNING] Summary length less than 5. Setting length to 5')
+        summary_length = 5
+
+    main(text_path=args['file'], embedding_path=args['embeddings'], sum_length=summary_length, show=True)
